@@ -48,7 +48,7 @@ class CoreRedactorEngine:
                 redact_pattern = id['pattern']
                 if re.search(redact_pattern, line):
                     pattern_string = re.search(redact_pattern, line)
-                    sensitive_string = pattern_string.group(0)
+                    sensitive_string = pattern_string[0]
                     sensitive_data.append(sensitive_string)
         return sensitive_data
 
@@ -66,9 +66,9 @@ class CoreRedactorEngine:
             redact_pattern = id['pattern']
             if re.search(redact_pattern, line):
                 pattern_string = re.search(redact_pattern, line)
-                pattern_string = pattern_string.group(0)
+                pattern_string = pattern_string[0]
                 masked_data = str(uuid.uuid4())
-                hash_map.update({masked_data: pattern_string})
+                hash_map[masked_data] = pattern_string
                 line = re.sub(redact_pattern, masked_data, line)
         return line, hash_map
 
@@ -84,15 +84,15 @@ class CoreRedactorEngine:
         hash_map = {}
         generated_file = f"redacted_file_{str(uuid.uuid1())}.txt"
         with open(
-            f"{generated_file}",
-            "w",
-            encoding="utf-8",
-        ) as result:
+                f"{generated_file}",
+                "w",
+                encoding="utf-8",
+            ) as result:
             for line in text:
                 data = self.redact_all(line)
                 redacted_line = data[0]
                 kv_pairs = data[1]
-                hash_map.update(kv_pairs)
+                hash_map |= kv_pairs
                 result.write(f"{redacted_line}\n")
             cj_object.write_hashmap(hash_map, generated_file, savedir)
             print(
@@ -109,21 +109,17 @@ class CoreRedactorEngine:
         Returns:
             Creates redacted file.
         """
-        count = 0
         hash_map = {}
+        count = 0
         try:
             # Open a file read pointer as target_file
             with open(filename, encoding="utf-8") as target_file:
                 if savedir != "./" and savedir[-1] != "/":
-                    savedir = savedir + "/"
+                    savedir = f"{savedir}/"
 
                 # created the directory if not present
                 if not os.path.exists(os.path.dirname(savedir)):
-                    print(
-                        "[+] "
-                        + os.path.dirname(savedir)
-                        + f"{self.dir_create}"
-                    )
+                    print(f"[+] {os.path.dirname(savedir)}" + f"{self.dir_create}")
                     os.makedirs(os.path.dirname(savedir))
 
                 print(
@@ -134,10 +130,10 @@ class CoreRedactorEngine:
 
                 # Open a file write pointer as result
                 with open(
-                    f"{savedir}redacted_{os.path.basename(filename)}",
-                    "w",
-                    encoding="utf-8",
-                ) as result:
+                                f"{savedir}redacted_{os.path.basename(filename)}",
+                                "w",
+                                encoding="utf-8",
+                            ) as result:
                     # Check if any redaction type option is given in argument. If none, will redact all sensitive data.
                     print("[+] No custom regex pattern supplied, will be redacting all the core sensitive data supported")
                     hash_map = {}
@@ -150,7 +146,7 @@ class CoreRedactorEngine:
                         data = self.redact_all(line)
                         redacted_line = data[0]
                         kv_pairs = data[1]
-                        hash_map.update(kv_pairs)
+                        hash_map |= kv_pairs
                         result.write(redacted_line)
                     cj_object.write_hashmap(hash_map, filename, savedir)
                     print(

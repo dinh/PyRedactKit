@@ -109,7 +109,7 @@ def recursive_file_search(full_path: str, extension: str, recursive: bool) -> se
             if extension in ('', file_ext):
                 files.add(path)
         elif recursive:
-            full_paths += glob.glob(path + '/*')
+            full_paths += glob.glob(f'{path}/*')
     return files
 
 
