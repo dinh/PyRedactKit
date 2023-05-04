@@ -62,9 +62,9 @@ class CustomRedactorEngine:
             redact_pattern = custom_pattern[id]['pattern']
             if re.search(redact_pattern, line, re.IGNORECASE):
                 pattern_string = re.search(redact_pattern, line)
-                pattern_string = pattern_string.group(0)
+                pattern_string = pattern_string[0]
                 masked_data = str(uuid.uuid4())
-                kv_pairs.update({masked_data: pattern_string})
+                kv_pairs[masked_data] = pattern_string
                 line = re.sub(redact_pattern, masked_data, line)
         return line, kv_pairs
 
@@ -78,21 +78,17 @@ class CustomRedactorEngine:
         Returns:
             Creates redacted file.
         """
-        redact_count = 0
         secret_map = {}
+        redact_count = 0
         try:
             # Open a file read pointer as target_file
             with open(file_name, encoding="utf-8") as target_file:
                 if make_dir != "./" and make_dir[-1] != "/":
-                    make_dir = make_dir + "/"
+                    make_dir = f"{make_dir}/"
 
                 # created the directory if not present
                 if not os.path.exists(os.path.dirname(make_dir)):
-                    print(
-                        "[+] "
-                        + os.path.dirname(make_dir)
-                        + f"{self.dir_create}"
-                    )
+                    print(f"[+] {os.path.dirname(make_dir)}" + f"{self.dir_create}")
                     os.makedirs(os.path.dirname(make_dir))
 
                 print(
@@ -103,10 +99,10 @@ class CustomRedactorEngine:
 
                 # Open a file write pointer as result
                 with open(
-                    f"{make_dir}redacted_{os.path.basename(file_name)}",
-                    "w",
-                    encoding="utf-8",
-                ) as result:
+                                f"{make_dir}redacted_{os.path.basename(file_name)}",
+                                "w",
+                                encoding="utf-8",
+                            ) as result:
                     # The supplied custom regex pattern file will be used to redact the file
                     print(f"[+] {customfile} file supplied, will be redacting all supplied custom regex patterns")
                     secret_map = {}
@@ -120,7 +116,7 @@ class CustomRedactorEngine:
                         data = self.redact_custom(line, customfile)
                         redacted_line = data[0]
                         kv_pairs = data[1]
-                        secret_map.update(kv_pairs)
+                        secret_map |= kv_pairs
                         result.write(redacted_line)
                     cj_object.write_hashmap(secret_map, file_name, make_dir)
                     print(
